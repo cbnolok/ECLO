@@ -21,8 +21,8 @@ static constexpr byte signature_encr_3[] = { 0x30, 0x08, 0x8B, 0x4E, 0x04, 0x8B,
 bool patch_encryption(std::fstream& fs, const size_t file_size, const int client_version)
 {
 
-    if (g_logger.is_verbose())
-            g_logger << "-- Starting patch: encryption." << std::endl;
+    if (Logger::get().level_verbose())
+            Logger::get() << "-- Starting patch: encryption." << std::endl;
 
     if (checkBox_encryption.Checked)
     {

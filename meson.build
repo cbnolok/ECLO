@@ -1,5 +1,5 @@
-project('EC Passepartout', 'cpp',
-  version: '1.2',
+project('UO Enhanced Client LOader', 'cpp',
+  version: '1.3',
   default_options: [
     'werror=true',
     'warning_level=3',
@@ -11,6 +11,9 @@ project('EC Passepartout', 'cpp',
     'default_library=static'
 ])
 
+os_str = build_machine.system()
+deps = []
+linker_flags = []
 
 # Get compiler and default build type
 cxx = meson.get_compiler('cpp')
@@ -19,56 +22,81 @@ optimization = get_option('optimization')
 summary('Build Type', build, section : 'Build Info')
 summary('Optimization', optimization, section : 'Build Info')
 
+
 # Add compiler arguments
 # -Wpedantic, -Wextra comes by default with warning level
+
 # hide/enable some warnings
-warning_flags = [
-  '-Wno-unused-command-line-argument',
+compiler_warning_flags = [
   '-Wsign-compare',
   '-Wconversion',
   '-Woverflow',
-#  '-Wstack-protector',
+  '-Wstack-protector',
   '-Winit-self',
   '-Wstrict-prototypes'
 ]
 
 # secure compile flags
-security_flags = [
+compiler_security_flags = [
 #  '-fstack-protector-strong',
   '-Wformat',
   '-Wformat-security',
   '-Wformat-overflow',
-  '-fno-strict-overflow',
-  '-fno-delete-null-pointer-checks',
-  '-fwrapv'
+  #'--enable-default-ssp',# stack canary
+  '-fstack-protector-all',
+  #'--enable-default-pie', # PIE to support ASLR: address space location randomization
+  '-pie'
 ]
 
 if get_option('optimization').to_int() >= 2
-  security_flags += [
+  compiler_security_flags += [
     '-D_FORTIFY_SOURCE=2'
+  ]
+
+  # mingw-w64, unlike GNU libc, does not provide fortified functions
+  if os_str == 'windows' and cxx.get_id() == 'gcc'
+    deps += cxx.find_library('ssp', required: true)
+  endif
+endif
+
+if os_str == 'linux'
+  linker_flags += [
+    # RELRO (Relocation Read-Only) is a generic mitigation technique to harden the data sections of an ELF binary/process.
+    '-z',
+    'relro',  # partial
+    '-z',
+    'now'     # full
+  ]
+elif os_str == 'windows'
+  linker_flags += [
+    '-Wl,--dynamicbase'# ASLR (address space layout randomization)
   ]
 endif
 
-debug_flags = []
+compiler_debug_flags = []
 if get_option('buildtype') == 'debug'
-  debug_flags += [
+  compiler_debug_flags += [
     '-ggdb'
   ]
 endif
 
-add_project_arguments(cxx.get_supported_arguments(warning_flags), language : 'cpp')
-add_project_arguments(cxx.get_supported_arguments(security_flags), language : 'cpp')
-add_project_arguments(cxx.get_supported_arguments(debug_flags), language : 'cpp')
+add_project_arguments(cxx.get_supported_arguments(compiler_warning_flags),  language: 'cpp')
+add_project_arguments(cxx.get_supported_arguments(compiler_security_flags), language: 'cpp')
+add_project_arguments(cxx.get_supported_arguments(compiler_debug_flags),    language: 'cpp')
 
 
-deps = [] #dependency('tomlpp')
+#deps += dependency('tomlpp')
 sources = []
 subdir('src')
 
-if(build_machine.system() == 'windows')
+if os_str == 'windows'
   deps += cxx.find_library('ws2_32', required: true)
+
+  os_win = import('windows')
+  sources += os_win.compile_resources('res/resources.rc')
 endif
 
-executable('ec_passepartout', sources,
-           win_subsystem: 'windows',
-           dependencies: deps)
+executable('eclo', sources,
+          link_args: linker_flags,
+          win_subsystem: 'console',
+          dependencies: deps)

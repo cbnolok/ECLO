@@ -11,8 +11,8 @@ bool patch_address(std::fstream& fs, const size_t file_size, const int client_ve
     // Precomputations
     const bool isClientTOL = ClientVersion::isTOL(client_version);
 
-    if (g_logger.is_verbose())
-        g_logger << "-- Starting patch: address." << std::endl;
+    if (Logger::get().level_verbose())
+        Logger::get() << "-- Starting patch: address." << std::endl;
 
 
     //------------------------//
@@ -33,8 +33,8 @@ bool patch_address(std::fstream& fs, const size_t file_size, const int client_ve
     size_t offset_ip = 0;
     constexpr byte signature_ip[] =    { 0x0A, 0, 0x55, 0x4F, 0x53, 0x41, 0x20, 0x2D, 0x20, 0x25, 0x73, 0x20, 0, 0 };
 
-    if (g_logger.is_verbose())
-        g_logger << "--- Searching for the signatures... ";
+    if (Logger::get().level_verbose())
+        Logger::get() << "--- Searching for the signatures... ";
 
     bool found = false;
 
@@ -57,7 +57,7 @@ bool patch_address(std::fstream& fs, const size_t file_size, const int client_ve
     }
     if (!found)
     {
-        g_logger << "Error. Can't find signature 1 for the port." << std::endl;
+        Logger::get() << "Error. Can't find signature 1 for the port." << std::endl;
         return false;
     }
     
@@ -84,7 +84,7 @@ bool patch_address(std::fstream& fs, const size_t file_size, const int client_ve
     }
     if (!found)
     {
-        g_logger << "Error. Can't find signature 2 for the port." << std::endl;
+        Logger::get() << "Error. Can't find signature 2 for the port." << std::endl;
         return false;
     }
 
@@ -92,7 +92,7 @@ bool patch_address(std::fstream& fs, const size_t file_size, const int client_ve
     //fs.seekg(std::fstream::beg);  //i don't need this, because for now IP block is after port 1 and 2 blocks
     if (!find_bytes(&offset_ip, fs, file_size, signature_ip, sizeof(signature_ip)))
     {
-        g_logger << "Error. Can't find signature for the IP." << std::endl;
+        Logger::get() << "Error. Can't find signature for the IP." << std::endl;
         return false;
     }
 
@@ -100,16 +100,16 @@ bool patch_address(std::fstream& fs, const size_t file_size, const int client_ve
     offset_port2 += 9;      //second PORT signature is 9 bytes long
     offset_ip += 14;        //IP signature is 14 bytes long
 
-    if (g_logger.is_verbose())
-        g_logger << "Success." << std::endl;
+    if (Logger::get().level_verbose())
+        Logger::get() << "Success." << std::endl;
 
 
     //--------------------//
     //    Write patches   //
     //--------------------//
 
-    if (g_logger.is_verbose())
-        g_logger << "--- Applying... ";
+    if (Logger::get().level_verbose())
+        Logger::get() << "--- Applying... ";
 
     // Divide the port into its two bytes (bytes reversed)
     byte bytes_port[2];
@@ -131,7 +131,7 @@ bool patch_address(std::fstream& fs, const size_t file_size, const int client_ve
     fs.write(reinterpret_cast<char*>(&bytes_port[1]), 1);
     if (fs.bad())
     {
-        g_logger << "Error. Unexpected upon replacing port 1 code." << std::endl;
+        Logger::get() << "Error. Unexpected upon replacing port 1 code." << std::endl;
         return false;
     }
 
@@ -141,7 +141,7 @@ bool patch_address(std::fstream& fs, const size_t file_size, const int client_ve
     fs.write(reinterpret_cast<char*>(&bytes_port[1]), 1);
     if (fs.bad())
     {
-        g_logger << "Error. Unexpected upon replacing port 2 code." << std::endl;
+        Logger::get() << "Error. Unexpected upon replacing port 2 code." << std::endl;
         return false;
     }
 
@@ -153,7 +153,7 @@ bool patch_address(std::fstream& fs, const size_t file_size, const int client_ve
         fs.write(reinterpret_cast<char*>(&bytes_port[1]), 1);
         if (fs.bad())
         {
-            g_logger << "Error. Unexpected upon replacing port 3 code." << std::endl;
+            Logger::get() << "Error. Unexpected upon replacing port 3 code." << std::endl;
             return false;
         }
     }
@@ -186,7 +186,7 @@ bool patch_address(std::fstream& fs, const size_t file_size, const int client_ve
 
         if (fs.bad())
         {
-            g_logger << "Error. Unexpected upon replacing IP with: " << count_ip << std::endl;
+            Logger::get() << "Error. Unexpected upon replacing IP with: " << count_ip << std::endl;
             return false;
         }
         return true;
@@ -202,8 +202,8 @@ bool patch_address(std::fstream& fs, const size_t file_size, const int client_ve
             return false;
     }
 
-    if (g_logger.is_verbose())
-        g_logger << "Success." << std::endl;
+    if (Logger::get().level_verbose())
+        Logger::get() << "Success." << std::endl;
 
     return true;
 }

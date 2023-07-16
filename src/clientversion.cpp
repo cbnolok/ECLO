@@ -4,9 +4,9 @@
 
 int ClientVersion::get_from_file(std::string_view filename) noexcept
 {
-    if (g_logger.is_verbose())
+    if (Logger::get().level_verbose())
     {
-        g_logger << "- Retrieving client version... ";
+        Logger::get() << "- Retrieving client version... ";
     }
 
     std::vector<int> ver = ExeVersion::get_from_file(filename);
@@ -22,11 +22,11 @@ int ClientVersion::get_from_file(std::string_view filename) noexcept
 
     const int cliver = (ver_revision + (ver_build * 100) + (ver_minor * 10000) + (ver_major * 1000000));
 
-    if (g_logger.is_verbose())
+    if (Logger::get().level_verbose())
     {
-        g_logger << "Success." << std::endl;
-        g_logger << "--> Version: " << ver_major << "." << ver_minor << "." << ver_build << "." << ver_revision << std::endl;
-        g_logger << "--> Is Time Of Legends or above? " << isTOL(cliver) << std::endl;
+        Logger::get() << "Success." << std::endl;
+        Logger::get() << "--> Version: " << ver_major << "." << ver_minor << "." << ver_build << "." << ver_revision << std::endl;
+        Logger::get() << "--> Is Time Of Legends or above? " << isTOL(cliver) << std::endl;
     }
 
     return cliver;

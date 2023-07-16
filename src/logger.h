@@ -2,26 +2,27 @@
 
 #include <iostream>
 
-class Logger
+struct Logger
 {
-public:
+    static Logger& get() noexcept;
+
+    Logger(Logger const&) = delete;
+    void operator=(Logger const&) = delete;
+
     enum class Level
     {
         Default,
         Verbose
     };
 
+    ~Logger() noexcept;
 private:
-    Level _enabled_level;
-    std::ostream _fn;
+    Logger() noexcept;    
 
 public:
-    Logger() noexcept;
-    
     void set_level(Level lvl) noexcept;
-    Level get_level() const noexcept;
-
-    bool is_verbose() const noexcept;
+    Level level() const noexcept;
+    bool level_verbose() const noexcept;
 
     // Stream operations
 
@@ -32,9 +33,12 @@ public:
     Logger& operator<< (std::ostream& (*f)(std::ostream&));
     Logger& operator<< (std::ostream& (*f)(std::ios&));
     Logger& operator<< (std::ostream& (*f)(std::ios_base&));
-};
 
-extern Logger g_logger;
+private:
+    static Logger* _instance;
+    Level _enabled_level;
+    std::ostream _fn;
+};
 
 
 // Template methods definitions

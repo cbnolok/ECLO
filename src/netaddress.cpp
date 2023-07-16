@@ -1,7 +1,8 @@
 #include "netaddress.h"
 #include "logger.h"
+#include <cstring>  // for strchr
+#include <cstdlib>  // for sscanf
 #ifdef _WIN32
-    //#pragma comment(lib, "ws2_32.lib")
     #include <WinSock2.h>
     #include <ws2tcpip.h>
 #else
@@ -9,7 +10,6 @@
     #include <sys/socket.h>
     #include <netdb.h>
 #endif
-#include <cstdlib>  // for sscanf
 
 
 bool NetAddress::is_valid_ipv4(const char* address) noexcept
@@ -24,7 +24,7 @@ bool NetAddress::is_valid_ipv4(const char* address) noexcept
 std::string NetAddress::resolve_hostname_to_ipv4(const char* hostname) noexcept
 {
     std::string ip;
-    g_logger << "- Interrogating hostname... ";
+    Logger::get() << "- Interrogating hostname... ";
 
     struct addrinfo  addr_hints = {};
     struct addrinfo* addr_infoptr = nullptr;
@@ -41,14 +41,14 @@ std::string NetAddress::resolve_hostname_to_ipv4(const char* hostname) noexcept
                 nullptr, static_cast<DWORD>(wsaResult),
                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                 reinterpret_cast<LPWSTR>(&s), 0, nullptr);
-            g_logger << "WSock error: " << s << " (code: " << wsaResult << ")" << std::endl;
+            Logger::get() << "WSock error: " << s << " (code: " << wsaResult << ")" << std::endl;
             LocalFree(s);
             return ip;
         }
 
         if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
             /* Tell the user that we could not find a usable WinSock DLL. */
-            g_logger << "WSock error: could not find a usable version of WinSock.dll." << std::endl;
+            Logger::get() << "WSock error: could not find a usable version of WinSock.dll." << std::endl;
             goto clean_and_ret;
         }
     }
@@ -58,15 +58,18 @@ std::string NetAddress::resolve_hostname_to_ipv4(const char* hostname) noexcept
         const int result_addr = getaddrinfo(hostname, nullptr, &addr_hints, &addr_infoptr);
         if (result_addr)
         {
-            g_logger << "Error: " << gai_strerror(result_addr);
+            Logger::get() << "Error: " << gai_strerror(result_addr);
             freeaddrinfo(addr_infoptr);
             goto clean_and_ret;
         }
 
-        g_logger << "Success." << std::endl;
+        Logger::get() << "Success." << std::endl;
 
-        //g_logger << "-- Interrogating \"" << hostname << "\"... " << std::endl;
-        //g_logger << "-- Found:" << std::endl;
+        if (Logger::get().level_verbose())
+        {
+            Logger::get() << "-- Interrogating \"" << hostname << "\"... " << std::endl;
+            Logger::get() << "-- Found:" << std::endl;
+        }
 
         char host[256]{};
         for (struct addrinfo* p = addr_infoptr; p != nullptr; p = p->ai_next)
@@ -76,7 +79,7 @@ std::string NetAddress::resolve_hostname_to_ipv4(const char* hostname) noexcept
             // I want the first IPv4 address that i get (not the IPv6, which has the : separators).
             if (nullptr == strchr(host, ':'))
             {
-                //g_logger << "--> " << host << std::endl;
+                //Logger::get() << "--> " << host << std::endl;
                 ip = host;
                 break;
             }

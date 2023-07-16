@@ -1,0 +1,7 @@
+[settings]
+input_client_name="UOSA.exe"
+output_client_name="UOSA_eclo.exe"
+address_ip_string="127.0.0.1"
+address_port=2593
+#disable_encryption=false #unsupported yet
+autolaunch=true
