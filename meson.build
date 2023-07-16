@@ -17,10 +17,10 @@ linker_flags = []
 
 # Get compiler and default build type
 cxx = meson.get_compiler('cpp')
-build = get_option('buildtype')
+build_type = get_option('buildtype')
 optimization = get_option('optimization')
-summary('Build Type', build, section : 'Build Info')
-summary('Optimization', optimization, section : 'Build Info')
+summary('Build Type', build_type, section: 'Build Info')
+summary('Optimization', optimization, section: 'Build Info')
 
 
 # Add compiler arguments
@@ -38,7 +38,6 @@ compiler_warning_flags = [
 
 # secure compile flags
 compiler_security_flags = [
-#  '-fstack-protector-strong',
   '-Wformat',
   '-Wformat-security',
   '-Wformat-overflow',
@@ -48,7 +47,8 @@ compiler_security_flags = [
   '-pie'
 ]
 
-if get_option('optimization').to_int() >= 2
+valid_number = not optimization.to_lower().contains('abcdefghijklmnopqrstuvwxyz'.split())
+if (valid_number and optimization.to_int() >= 2) or optimization == 's'
   compiler_security_flags += [
     '-D_FORTIFY_SOURCE=2'
   ]
@@ -74,7 +74,7 @@ elif os_str == 'windows'
 endif
 
 compiler_debug_flags = []
-if get_option('buildtype') == 'debug'
+if build_type == 'debug'
   compiler_debug_flags += [
     '-ggdb'
   ]
